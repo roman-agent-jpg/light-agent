@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#161a22">
+<meta name="description" content="Лёгкий облачный ИИ-агент: программирование, файлы, проекты, веб-поиск">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agent">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/static/icons/claude-icon.png">
+<link rel="apple-touch-icon" href="/static/icons/claude-icon.png">
+<title>Claude Code — Research Preview</title>
+<link rel="stylesheet" href="/static/app.css?v=3.5">
+</head>
+<body>
+
+<header>
+  <div class="win-controls">
+    <span class="win-dot dot-red" title="Закрыть"></span>
+    <span class="win-dot dot-yellow" title="Свернуть"></span>
+    <span class="win-dot dot-green" title="Развернуть"></span>
+  </div>
+  <button class="icon ghost" id="bSide" title="Панель проекта (Ctrl+B)">☰</button>
+  <span class="dot" id="dot" title="Статус агента"></span>
+  <span class="badge" id="bProj" hidden>📁 default</span>
+
+  <div class="win-title" id="winTitle">
+    <img src="/static/icons/claude-icon.png" class="win-title-icon" alt="">
+    <span>claude-code — </span><span id="winTitleProject">default</span>
+  </div>
+
+  <div class="grow"></div>
+  <span class="badge" id="bMem" title="Supabase память">память…</span>
+  <span class="badge" id="bSto" title="S3 Диск">диск…</span>
+  <span class="badge" id="bLLM" title="Модель">LLM…</span>
+  <button class="icon ghost" id="bInstall" onclick="installApp()" title="Установить приложение" hidden>⬇</button>
+  <select id="selModel" title="Модель" style="max-width:260px;font-size:12px;padding:4px 8px"></select>
+  <span class="badge ok" id="bNet" title="Соединение">онлайн</span>
+</header>
+
+<div class="layout">
+  <div class="scrim" id="scrim" onclick="closeAllPanels()"></div>
+
+  <!-- ====== Левая панель ====== -->
+  <aside class="sidebar" id="side">
+    <!-- Проекты -->
+    <div class="side-head">
+      <span>📁 Проекты</span>
+      <div class="grow"></div>
+      <button class="icon ghost" onclick="newProjectPrompt()" title="Создать проект">＋</button>
+      <button class="icon ghost side-close-mobile" onclick="closeAllPanels()" title="Закрыть панель">✕</button>
+    </div>
+    <div class="proj-select-wrap">
+      <select id="projSelect" class="proj-dropdown" onchange="switchProject(this.value)">
+        <option value="default">default</option>
+      </select>
+    </div>
+
+    <!-- Диалоги / Сессии -->
+    <div class="side-head" style="border-top:1px solid var(--line);border-bottom:none">
+      <span>💬 Диалоги</span>
+      <div class="grow"></div>
+      <button class="icon ghost" onclick="newSession()" title="Новый диалог">＋</button>
+    </div>
+    <div class="side-scroll sess-scroll" id="sessList"></div>
+
+    <!-- Файлы проекта -->
+    <div class="side-head" style="border-top:1px solid var(--line);border-bottom:none">
+      <span id="filesHeadTitle">📄 Файлы проекта</span>
+      <div class="grow"></div>
+      <button class="icon ghost" onclick="newFolder()" title="Новая папка">＋</button>
+      <button class="icon ghost" onclick="uploadPick()" title="Загрузить файл">⬆</button>
+      <button class="icon ghost" onclick="loadTree()" title="Обновить файлы">⟳</button>
+    </div>
+    <div class="side-scroll tree-scroll">
+      <div class="tree" id="tree"></div>
+    </div>
+
+    <!-- Секреты -->
+    <div class="side-head" style="border-top:1px solid var(--line);border-bottom:none">
+      <span>🔐 Секреты</span>
+      <div class="grow"></div>
+      <button class="icon ghost" onclick="openSecretDialog()" title="Добавить ключ">＋</button>
+    </div>
+    <div class="side-scroll" style="max-height:120px" id="vaultList"></div>
+
+    <input type="file" id="filePick" multiple hidden onchange="doUpload(this.files)">
+  </aside>
+
+  <!-- ====== Центр ====== -->
+  <section class="center">
+    <div class="chat" id="chat">
+      <div class="chat-inner" id="chatInner">
+        <div class="welcome" id="welcome">
+          <div class="claude-hero">
+            <div class="claude-symbol-wrap">
+              <img src="/static/icons/claude-icon.png" class="claude-symbol-img" width="88" height="88" alt="Claude Code">
+            </div>
+            <div class="claude-hero-text">
+              <h1 class="claude-title">Claude Code</h1>
+              <div class="claude-tag">RESEARCH PREVIEW CLI</div>
+            </div>
+          </div>
+
+          <div class="cli-card">
+            <div class="cli-line">
+              <span class="cli-prompt">$</span> <span class="cli-cmd">claude</span> <span class="cli-arg">&quot;Refactor cloud architecture and optimize tests&quot;</span>
+            </div>
+            <div class="cli-line">
+              <span class="cli-check">✓</span> <span class="cli-bold">Analyzed project structure</span> <span class="cli-dim">(4 files indexed)</span>
+            </div>
+            <div class="cli-line">
+              <span class="cli-arrow">&gt;</span> <span class="cli-dim">Generating solution...</span> <span class="cli-cursor">█</span>
+            </div>
+          </div>
+
+          <div class="hintline">
+            <b>Ctrl+B</b> панель проекта · <b>Esc</b> остановить задачу · <b>Каждая папка</b> сохраняется изолированно в Supabase
+          </div>
+
+          <div class="sugg-grid">
+            <div class="sugg" data-q="Создай проект: спроси у меня имя и цель, затем сделай структуру папок и файлов">
+              <div class="sugg-cmd">$ claude &quot;Создать структуру проекта&quot;</div>
+              <span class="k">make_dir → write_file — создание структуры</span>
+            </div>
+            <div class="sugg" data-q="Покажи структуру проекта и объясни, что в каждом файле">
+              <div class="sugg-cmd">$ claude &quot;Разобрать файлы проекта&quot;</div>
+              <span class="k">tree → read_file — детальный анализ</span>
+            </div>
+            <div class="sugg" data-q="Найди в интернете новости про ИИ-агентов за эту неделю и кратко суммируй">
+              <div class="sugg-cmd">$ claude &quot;Поиск свежих данных в сети&quot;</div>
+              <span class="k">web_search — поиск в реальном времени</span>
+            </div>
+            <div class="sugg" data-q="Напиши Python-скрипт, который считает числа Фибоначчи до 100000 и сохраняет результат">
+              <div class="sugg-cmd">$ claude &quot;Написать и протестировать код&quot;</div>
+              <span class="k">write_file → run_python_file — с проверкой</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="composer-inner">
+        <div class="attbar" id="attbar"></div>
+        <div class="inrow">
+          <button class="icon ghost attach-btn" id="bAttach" onclick="pickChatFiles()" title="Прикрепить файл (Ctrl+U или вставка из буфера)">
+            <svg class="attach-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
+          <input type="file" id="chatFilePick" multiple hidden onchange="handleChatFiles(this.files)">
+          <textarea id="in" rows="1"
+            placeholder="Опишите задачу… прикрепите файлы или продиктуйте голосом"
+            oninput="grow(this)" onkeydown="onKey(event)"></textarea>
+          <button class="icon mic-btn" id="mic" onclick="toggleMic()" title="Голосовой ввод">
+            <svg class="mic-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+          </button>
+          <button class="icon" id="bStop" onclick="stopRun()" title="Остановить (Esc)" hidden>■</button>
+          <button class="primary" id="bSend" onclick="send()" title="Отправить">Отправить ↵</button>
+        </div>
+        <div class="hintbar">
+          <span><kbd>Enter</kbd> отправить · <kbd>Shift+Enter</kbd> новая строка ·
+            <kbd>Ctrl+B</kbd> панель · <kbd>Esc</kbd> стоп</span>
+          <span id="hintRight">Файлы можно перетащить в окно</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== Правая панель: просмотр файла ====== -->
+  <aside class="fpanel hidden" id="fpanel">
+    <div class="fp-head">
+      <span class="path" id="fpPath">—</span>
+      <button class="icon ghost" onclick="saveFile()" id="bSave" title="Сохранить">💾</button>
+      <button class="icon ghost" onclick="closeFile()" title="Закрыть">✕</button>
+    </div>
+    <div class="fp-body" id="fpBody"></div>
+    <div class="fp-foot">
+      <button onclick="downloadFile()">Скачать</button>
+      <button onclick="runFile()">Запустить .py</button>
+      <button onclick="askAboutFile()">Спросить агента</button>
+      <button class="danger" onclick="delFile()">Удалить</button>
+    </div>
+  </aside>
+
+</div>
+
+<!-- ====== Модалка: новая папка / переименование ====== -->
+<div class="modal" id="modal">
+  <div class="mbox">
+    <h3 id="mTitle">Новая папка</h3>
+    <input id="mInput" style="width:100%" placeholder="имя" onkeydown="if(event.key==='Enter')mOk()">
+    <div class="row">
+      <button onclick="mClose()">Отмена</button>
+      <button class="primary" onclick="mOk()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Секрет: добавление и просмотр ====== -->
+<div class="modal" id="secModal">
+  <div class="mbox" style="width:min(440px,94vw)">
+    <h3 id="sTitle">Новый секрет</h3>
+    <div id="sForm">
+      <input id="sName" style="width:100%;margin-bottom:8px"
+             placeholder="Имя, например RENDER_API_KEY">
+      <input id="sValue" type="password" style="width:100%;margin-bottom:8px"
+             placeholder="Значение ключа" autocomplete="off">
+      <input id="sNote" style="width:100%"
+             placeholder="Заметка (необязательно)">
+      <div class="vshint">Ключ шифруется и хранится в базе, а не в файлах проекта.
+        В репозиторий не попадёт.</div>
+    </div>
+    <div id="sView" style="display:none">
+      <div class="vval" id="sShown"></div>
+      <div class="vshint">Это значение показывается один раз. Скопируйте его сейчас,
+        если нужно.</div>
+    </div>
+    <div class="row">
+      <button onclick="secClose()">Закрыть</button>
+      <button class="primary" id="sSave" onclick="saveSecret()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div id="drop">Отпустите файлы — загрузятся на сервер</div>
+<div class="toast" id="toast"></div>
+
+<script src="/static/app.js?v=3.4"></script>
+</body>
+</html>
