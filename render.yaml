@@ -1,0 +1,95 @@
+# Render Blueprint: описание нашего сервиса.
+#
+# Render читает этот файл и сам создаёт сервис.
+# Значения секретов НЕ хранятся здесь - вместо них sync: false,
+# то есть Render спросит их при создании.
+
+services:
+  - type: web
+    name: light-agent
+    runtime: python
+    plan: free
+    repo: https://github.com/clodecode2026-debug/light-agent
+    branch: main
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 65 --workers 1
+
+    healthCheckPath: /health
+
+    # Python 3.12 — подтверждено рабочим локально
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+
+      # Один воркер: на free 1 CPU, а память 512 МБ. Два воркера
+      # съедят её за минуту. Потоки внутри уже есть — см. agent.py.
+      - key: WEB_CONCURRENCY
+        value: "1"
+
+      # Не даём requests/http.client накапливать сокеты
+      - key: UVICORN_LIMIT_CONCURRENCY
+        value: "20"
+
+      # ---- Мост Antigravity (работает, функциональные вызовы есть) ----
+      - key: AG_BASE_URL
+        sync: false
+      - key: AG_API_KEY
+        sync: false
+      - key: AG_MODEL
+        value: antigravity-3.8-flash
+      - key: AG_MODEL_FALLBACK
+        value: antigravity-3.8-pro
+
+      # ---- Фолбэк-провайдеры (необязательно) ----
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # ---- Память Supabase ----
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+      # ---- Хранилище секретов и автосоздание таблиц ----
+      # SUPABASE_ACCESS_TOKEN -Management API: агент сам создаёт
+      # таблицы (обычный клиент supabase не умеет DDL).
+      - key: SUPABASE_ACCESS_TOKEN
+        sync: false
+      # PROJECT_REF выводится из SUPABASE_URL автоматически, но зададим явно
+      - key: SUPABASE_PROJECT_REF
+        sync: false
+
+      # ---- Управление инфраструктурой ----
+      # Агент может управлять деплоями Render, если есть ключ.
+      # Без него инфраструктурные инструменты отвечают «нет ключа».
+      - key: RENDER_API_KEY
+        sync: false
+      - key: RENDER_OWNER_ID
+        sync: false
+
+      # ---- Облачное хранилище Storj ----
+      - key: S3_ENDPOINT
+        value: https://gateway.storjshare.io
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: S3_BUCKET
+        value: agent-files
+      - key: S3_REGION
+        value: us-east-1
+
+      # ---- Прочее ----
+      - key: IDLE_SLEEP_MINUTES
+        value: "14"
+      - key: ADMIN_TOKEN
+        sync: false
+      # Ссылка на сам сервис - её надо заполнить ПОСЛЕ первого деплоя,
+      # иначе антизасыпание не сможет пинговать сам себя.
+      - key: SERVICE_URL
+        sync: false
