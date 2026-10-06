@@ -23,11 +23,14 @@
 from __future__ import annotations
 
 import base64
+import concurrent.futures
 import hashlib
 import json
 import os
 import re
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 try:
@@ -461,12 +464,39 @@ def _git_blob_sha(data: bytes) -> str:
     return hashlib.sha1(header + data).hexdigest()
 
 
+def _gh_req(url: str, token: str, method: str = "GET",
+            payload: dict | None = None, timeout: float = 15.0) -> tuple[int, object]:
+    """Быстрый надежный HTTP-запрос к GitHub API через urllib."""
+    data = json.dumps(payload).encode("utf-8") if payload else None
+    req = urllib.request.Request(
+        url, data=data, method=method,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "LightAgent/2.0",
+            **({"Content-Type": "application/json"} if data else {}),
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            body = r.read().decode("utf-8")
+            return r.status, (json.loads(body) if body else None)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "replace")
+        try:
+            return e.code, json.loads(body)
+        except Exception:
+            return e.code, body[:300]
+    except Exception as exc:
+        return 0, str(exc)
+
+
 def tool_github_sync(repo_name: str = "", branch: str = "main",
                      message: str = "Update project from Light Agent",
                      private: bool = False,
                      all_repo: bool = False) -> str:
     """Выгружает проект на GitHub. Создаёт репозиторий, если его ещё нет,
-    и синхронизирует все файлы через GitHub API.
+    и синхронизирует все файлы через GitHub API параллельно.
 
     Параметры:
       repo_name — имя репозитория на GitHub (по умолчанию имя активного проекта)
@@ -479,24 +509,13 @@ def tool_github_sync(repo_name: str = "", branch: str = "main",
     if not token:
         return f"Ошибка: {err}"
 
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json",
-    }
-
     # 1. Узнаём логин пользователя
-    try:
-        with httpx.Client(timeout=30.0) as c:
-            r = c.get("https://api.github.com/user", headers=headers)
-            if r.status_code != 200:
-                return f"Ошибка авторизации на GitHub (код {r.status_code}): {r.text[:200]}"
-            user_data = r.json()
-            owner = user_data.get("login")
-            if not owner:
-                return "Не удалось определить имя пользователя GitHub"
-    except Exception as exc:
-        return f"Ошибка соединения с GitHub: {exc}"
+    code, user_data = _gh_req("https://api.github.com/user", token)
+    if code != 200 or not isinstance(user_data, dict):
+        return f"Ошибка авторизации на GitHub (код {code}): {user_data}"
+    owner = user_data.get("login")
+    if not owner:
+        return "Не удалось определить имя пользователя GitHub"
 
     # 2. Определяем имя репозитория
     cur_proj = config.get_current_project()
@@ -504,25 +523,21 @@ def tool_github_sync(repo_name: str = "", branch: str = "main",
     if not target_repo:
         target_repo = "light-agent" if (cur_proj == "default" or all_repo) else cur_proj
     safe_repo = re.sub(r"[^a-zA-Z0-9_\-\.]", "-", target_repo).strip("-") or "my-project"
+    branch = (branch or "main").strip()
 
     # 3. Проверяем наличие репозитория на GitHub, создаём если нет
-    branch = (branch or "main").strip()
-    try:
-        with httpx.Client(timeout=45.0) as c:
-            repo_res = c.get(f"https://api.github.com/repos/{owner}/{safe_repo}", headers=headers)
-            if repo_res.status_code == 404:
-                create_payload = {
-                    "name": safe_repo,
-                    "private": bool(private),
-                    "auto_init": True,
-                    "description": f"Created via Light Agent ({cur_proj})",
-                }
-                c_res = c.post("https://api.github.com/user/repos", headers=headers, json=create_payload)
-                if c_res.status_code not in (200, 201):
-                    return f"Ошибка создания репозитория {safe_repo} на GitHub (код {c_res.status_code}): {c_res.text[:250]}"
-                time.sleep(1.5)
-    except Exception as exc:
-        return f"Ошибка проверки/создания репозитория: {exc}"
+    code, repo_info = _gh_req(f"https://api.github.com/repos/{owner}/{safe_repo}", token)
+    if code == 404:
+        create_payload = {
+            "name": safe_repo,
+            "private": bool(private),
+            "auto_init": True,
+            "description": f"Created via Light Agent ({cur_proj})",
+        }
+        c_code, c_res = _gh_req("https://api.github.com/user/repos", token, method="POST", payload=create_payload)
+        if c_code not in (200, 201):
+            return f"Ошибка создания репозитория {safe_repo} на GitHub (код {c_code}): {c_res}"
+        time.sleep(1.5)
 
     # 4. Собираем файлы проекта для выгрузки
     FORBIDDEN_NAMES = {".env", ".secrets", "credentials.txt", "credentials.json", ".env.local"}
@@ -536,7 +551,10 @@ def tool_github_sync(repo_name: str = "", branch: str = "main",
                 if f in FORBIDDEN_NAMES or f.endswith((".pyc", ".log", ".tmp", ".key", ".pem")) or f == "orion.svg":
                     continue
                 full = Path(root) / f
-                rel = full.relative_to(base_dir).as_posix()
+                try:
+                    rel = full.relative_to(base_dir).as_posix()
+                except Exception:
+                    continue
                 if rel.startswith("tests/cyr_") or rel.startswith("tests/render_") or rel.startswith("tests/deploy_"):
                     continue
                 files_to_sync.append((full, rel))
@@ -548,7 +566,10 @@ def tool_github_sync(repo_name: str = "", branch: str = "main",
                 if f in FORBIDDEN_NAMES or f.endswith((".pyc", ".log", ".tmp")):
                     continue
                 full = Path(root) / f
-                rel = full.relative_to(base_dir).as_posix()
+                try:
+                    rel = full.relative_to(base_dir).as_posix()
+                except Exception:
+                    continue
                 files_to_sync.append((full, rel))
 
     if not files_to_sync:
@@ -556,46 +577,50 @@ def tool_github_sync(repo_name: str = "", branch: str = "main",
         readme.write_text(f"# {safe_repo}\n\nProject created with Light Agent.\n", encoding="utf-8")
         files_to_sync.append((readme, "README.md"))
 
-    # 5. Загружаем файлы на GitHub через Contents API
+    # 5. Загружаем файлы на GitHub параллельно
     uploaded = 0
     identical = 0
-    errors = []
+    errors: list[str] = []
 
-    try:
-        with httpx.Client(timeout=45.0) as c:
-            for full_p, rel_path in files_to_sync:
-                try:
-                    content_bytes = full_p.read_bytes()
-                    local_sha = _git_blob_sha(content_bytes)
+    def sync_one(item: tuple[Path, str]) -> tuple[str, str]:
+        p, rel = item
+        try:
+            content_bytes = p.read_bytes()
+            local_sha = _git_blob_sha(content_bytes)
 
-                    get_url = f"https://api.github.com/repos/{owner}/{safe_repo}/contents/{rel_path}?ref={branch}"
-                    get_r = c.get(get_url, headers=headers)
-                    remote_sha = None
-                    if get_r.status_code == 200:
-                        remote_data = get_r.json()
-                        remote_sha = remote_data.get("sha")
-                        if remote_sha == local_sha:
-                            identical += 1
-                            continue
+            get_url = f"https://api.github.com/repos/{owner}/{safe_repo}/contents/{rel}?ref={branch}"
+            get_code, get_data = _gh_req(get_url, token, timeout=12.0)
+            remote_sha = None
+            if get_code == 200 and isinstance(get_data, dict):
+                remote_sha = get_data.get("sha")
+                if remote_sha == local_sha:
+                    return ("identical", rel)
 
-                    put_payload = {
-                        "message": f"{message}: {rel_path}",
-                        "content": base64.b64encode(content_bytes).decode("ascii"),
-                        "branch": branch,
-                    }
-                    if remote_sha:
-                        put_payload["sha"] = remote_sha
+            put_payload = {
+                "message": f"{message}: {rel}",
+                "content": base64.b64encode(content_bytes).decode("ascii"),
+                "branch": branch,
+            }
+            if remote_sha:
+                put_payload["sha"] = remote_sha
 
-                    put_url = f"https://api.github.com/repos/{owner}/{safe_repo}/contents/{rel_path}"
-                    put_r = c.put(put_url, headers=headers, json=put_payload)
-                    if put_r.status_code in (200, 201):
-                        uploaded += 1
-                    else:
-                        errors.append(f"{rel_path} -> HTTP {put_r.status_code}")
-                except Exception as ex:
-                    errors.append(f"{rel_path} -> {ex}")
-    except Exception as exc:
-        return f"Сбой при загрузке файлов: {exc}"
+            put_url = f"https://api.github.com/repos/{owner}/{safe_repo}/contents/{rel}"
+            put_code, put_data = _gh_req(put_url, token, method="PUT", payload=put_payload, timeout=20.0)
+            if put_code in (200, 201):
+                return ("uploaded", rel)
+            return ("error", f"{rel} -> HTTP {put_code}")
+        except Exception as ex:
+            return ("error", f"{rel} -> {ex}")
+
+    workers = min(8, max(2, len(files_to_sync)))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        for status_kind, info in executor.map(sync_one, files_to_sync):
+            if status_kind == "uploaded":
+                uploaded += 1
+            elif status_kind == "identical":
+                identical += 1
+            else:
+                errors.append(info)
 
     repo_url = f"https://github.com/{owner}/{safe_repo}"
     res_text = (
