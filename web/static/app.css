@@ -1,0 +1,602 @@
+/* ============================================================================
+   ПАЛИТРА
+   Взята из настоящего Claude Code 2.1.289: цвета извлечены из его бандла
+   (105 МБ linux-x64 пакет), а не подобраны на глаз. Главное — терракотовый
+   акцент #d77757 и тёплый фон #141413 вместо синего и холодного.
+
+   Источник: npm @anthropic-ai/claude-code-linux-x64, файл package/claude
+   ========================================================================== */
+:root{
+  /* Фоны — аутентичная тёплая палитра Claude Code */
+  --bg:#141413;          /* основной тёплый кофейно-угольный фон */
+  --bg2:#1a1a19;         /* поля ввода, сайдбар */
+  --panel:#1e1e1c;       /* шапка, карточки, панели */
+  --panel2:#262624;      /* кнопки, вложенные блоки */
+
+  /* Текст */
+  --txt:#e2e8f0;         /* основной светлый */
+  --txt2:#b6bcc8;        /* вторичный текст */
+  --dim:#64748b;         /* приглушённый моно/лейблы */
+  --faint:#4a5568;
+
+  /* Границы */
+  --line:#2f2f2c;
+  --line2:#3d3d39;
+
+  /* Акценты — аутентичный терракотовый Claude */
+  --acc:#d77757;         /* фирменный терракотовый */
+  --acc-hi:#e08a6b;      /* подсветка при наведении */
+  --acc-dim:rgba(215,119,87,.14);
+  --acc-line:rgba(215,119,87,.38);
+
+  /* Служебные цвета */
+  --ok:#5a9e6f;          /* шалфейный зелёный */
+  --warn:#f59e0b;
+  --err:#ef4444;
+  --info:#5b8ac9;
+
+  /* Роли инструментов */
+  --tool-read:#7aa2c4;
+  --tool-write:#5a9e6f;
+  --tool-edit:#c08a4e;
+  --tool-bash:#d77757;
+  --tool-search:#9b7bc4;
+  --tool-net:#5b8ac9;
+
+  /* Diff */
+  --diff-add:#3f7a4e;
+  --diff-del:#a63c3c;
+
+  --code:#e2e8f0;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--txt);
+  font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;font-size:13px;color:var(--txt);background:var(--panel2);
+  border:1px solid var(--line);padding:6px 13px;border-radius:9px;cursor:pointer;
+  transition:all .15s cubic-bezier(0.16,1,0.3,1);display:inline-flex;
+  align-items:center;gap:6px;line-height:1.4;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 1px 3px rgba(0,0,0,.25)}
+button:hover{border-color:var(--line2);background:var(--panel);transform:translateY(-1px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09), 0 3px 8px rgba(0,0,0,.35)}
+button:active{transform:translateY(1px);box-shadow:inset 0 1px 2px rgba(0,0,0,.4)}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+button.primary{background:linear-gradient(180deg, var(--acc-hi) 0%, var(--acc) 100%);
+  border:1px solid rgba(255,255,255,.15);color:#141413;font-weight:600;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 2px 8px rgba(215,119,87,.35)}
+button.primary:hover{background:linear-gradient(180deg, #ebb19b 0%, var(--acc-hi) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 4px 14px rgba(215,119,87,.48)}
+button.ghost{background:transparent;border-color:transparent;color:var(--dim);box-shadow:none}
+button.ghost:hover{background:var(--panel2);color:var(--txt);box-shadow:none}
+button.icon{padding:5px 8px;font-size:14px;line-height:1}
+button.danger:hover{border-color:var(--err);color:var(--err)}
+
+/* Кнопка микрофона */
+.mic-btn{color:var(--dim);border-radius:8px;padding:6px 8px;transition:all .2s ease;display:inline-flex;align-items:center;justify-content:center}
+.mic-btn:hover{color:var(--acc-hi);background:var(--acc-dim)}
+.mic-btn.rec{background:rgba(239,68,68,.18);border-color:var(--err);color:var(--err);
+  animation:micpulse 1.2s ease-in-out infinite;box-shadow:0 0 14px rgba(239,68,68,.4)}
+@keyframes micpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+input,textarea,select{font-family:inherit;font-size:13px;color:var(--txt);
+  background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:7px 11px;
+  transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);
+  box-shadow:0 0 0 3px rgba(215,119,87,.2)}
+
+/* Тонкий элегантный скроллбар */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.24)}
+
+/* ---------- Шапка в стиле Claude Code macOS Terminal ---------- */
+header{
+  height:40px;flex-shrink:0;display:flex;align-items:center;gap:8px;
+  padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);
+  position:relative;
+}
+.win-controls{display:flex;align-items:center;gap:7px;margin-right:6px}
+.win-dot{width:11px;height:11px;border-radius:50%;display:inline-block;cursor:default;transition:opacity .15s}
+.win-dot:hover{opacity:.85}
+.dot-red{background:#ff5f56;box-shadow:0 0 5px rgba(255,95,86,.5)}
+.dot-yellow{background:#ffbd2e;box-shadow:0 0 5px rgba(255,189,46,.5)}
+.dot-green{background:#27c93f;box-shadow:0 0 5px rgba(39,201,63,.5)}
+
+/* Центрированный заголовок окна как в macOS Terminal */
+.win-title{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font-family:var(--mono);font-size:12.5px;color:#7d8590;letter-spacing:.02em;
+  user-select:none;pointer-events:none;white-space:nowrap;display:flex;align-items:center;gap:6px;
+}
+.win-title-icon{width:16px;height:16px;border-radius:3px;object-fit:cover;
+  filter:drop-shadow(0 0 6px rgba(218,119,86,.6))}
+.win-title #winTitleProject{color:#c9d1d9;font-weight:600}
+
+/* Точка активности */
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);
+  box-shadow:0 0 6px rgba(63,185,80,.6);display:inline-block;margin-left:2px}
+.dot.busy{background:var(--warn);box-shadow:0 0 6px rgba(245,158,11,.6);
+  animation:pulse 1.1s ease-in-out infinite}
+.dot.err,.dot.offline{background:var(--err);box-shadow:0 0 6px rgba(248,81,73,.6)}
+.dot.online{background:var(--ok);box-shadow:0 0 6px rgba(63,185,80,.6)}
+@keyframes pulse{50%{opacity:.35}}
+
+.sep{width:1px;height:18px;background:var(--line)}
+.badge{font-size:11px;color:var(--dim);background:var(--bg2);border:1px solid var(--line);
+  padding:2px 8px;border-radius:20px;white-space:nowrap;cursor:default;
+  font-family:var(--mono)}
+.badge.ok{color:var(--ok);border-color:#1e382b}
+.badge.bad{color:var(--err);border-color:#4a2222}
+.grow{flex:1}
+
+/* ---------- Каркас ---------- */
+.layout{flex:1;display:flex;min-height:0}
+.sidebar{
+  width:250px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0;transition:margin-left .2s;
+}
+.sidebar.collapsed{margin-left:-250px}
+.side-head{padding:9px 11px;font-size:11px;font-weight:600;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;
+  gap:6px;border-bottom:1px solid var(--line)}
+.side-head .grow{flex:1}
+.side-scroll{flex:1;overflow-y:auto;padding:6px}
+.proj-select-wrap{padding:7px 9px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.proj-dropdown{width:100%;background:var(--bg);border:1px solid var(--line2);border-radius:8px;
+  padding:6px 9px;font-size:12.5px;color:var(--txt);font-weight:500;cursor:pointer;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.sess-scroll{flex:0 0 auto;max-height:180px;overflow-y:auto;padding:4px 6px}
+.tree-scroll{flex:1 1 auto;overflow-y:auto;min-height:110px;padding:4px 6px}
+
+/* Дерево файлов */
+.tree{font-family:var(--mono);font-size:12.5px}
+.tnode{display:flex;align-items:center;gap:5px;padding:4px 7px;border-radius:7px;
+  cursor:pointer;white-space:nowrap;overflow:hidden;transition:background .12s}
+.tnode:hover{background:var(--panel)}
+.tnode.sel{background:var(--acc-dim);color:var(--acc-hi);
+  box-shadow:inset 3px 0 0 var(--acc)}
+.tnode .nm{overflow:hidden;text-overflow:ellipsis}
+.tnode .sz{margin-left:auto;font-size:10px;color:var(--dim);flex-shrink:0}
+.tnode.sel .sz{color:#dfe6ff}
+.tnode .ic{flex-shrink:0;width:14px;text-align:center;opacity:.85}
+.hint{padding:16px 10px;color:var(--dim);font-size:12px;text-align:center;line-height:1.7}
+
+/* Сессии */
+.sess{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:7px;
+  cursor:pointer;font-size:12px;color:var(--txt2);margin-bottom:2px;position:relative;
+  transition:background .12s}
+.sess:hover{background:var(--panel)}
+.sess.sel{background:var(--acc-dim);color:var(--acc-hi);
+  box-shadow:inset 3px 0 0 var(--acc)}
+.sess .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sess .cnt{font-size:10px;color:var(--dim);background:var(--panel2);padding:1px 5px;
+  border-radius:8px;font-family:var(--mono)}
+.sess .del{opacity:0;background:none;border:none;color:var(--faint);padding:2px 4px;
+  font-size:11px;cursor:pointer;line-height:1;border-radius:3px}
+.sess:hover .del{opacity:1}
+.sess .del:hover{color:var(--err);background:rgba(239,68,68,.15)}
+
+/* Секреты — зашифрованное хранилище */
+.sec{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:6px;
+  font-size:12.5px;color:var(--txt2);font-family:var(--mono)}
+.sec:hover{background:var(--panel)}
+.sec .ic{font-size:11px;opacity:.85}
+.sec .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sec button{background:none;border:none;color:var(--faint);padding:0 3px;
+  font-size:13px;line-height:1}
+.sec button:hover{color:var(--err)}
+.vhint{font-size:11px;color:var(--faint);line-height:1.55;margin-top:9px}
+.vval{font-family:var(--mono);font-size:12px;background:var(--bg);
+  border:1px solid var(--line);border-radius:7px;padding:9px 10px;
+  word-break:break-all;color:var(--acc-hi);max-height:150px;overflow:auto}
+
+/* ---------- Центр ---------- */
+.center{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;
+  position:relative}
+.chat{flex:1;overflow-y:auto;padding:20px 0;min-height:0}
+.chat-inner{max-width:780px;margin:0 auto;padding:0 24px}
+/* Стили .welcome и .sugg — ниже, в секции «Welcome» рядом с палитрой */
+
+/* Сообщения */
+.msg{display:flex;gap:11px;margin-bottom:20px;animation:fade .18s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.msg .av{width:25px;height:25px;border-radius:6px;flex-shrink:0;display:grid;
+  place-items:center;font-size:11px;font-weight:600;margin-top:1px}
+.msg.u .av{background:var(--acc);color:#1a1207}
+.msg.a .av{background:transparent;border:none;overflow:hidden;padding:0}
+.msg.a .av img,.av-img{width:25px;height:25px;border-radius:6px;object-fit:cover;
+  display:block;filter:drop-shadow(0 0 6px rgba(218,119,86,.55))}
+.msg .body{flex:1;min-width:0}
+.bub{white-space:pre-wrap;word-wrap:break-word;line-height:1.7}
+.msg.u .bub{background:var(--panel);border:1px solid var(--line);padding:10px 15px;
+  border-radius:14px 14px 4px 14px;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+.meta{font-size:11px;color:var(--dim);margin-top:6px;display:flex;gap:9px;
+  flex-wrap:wrap;align-items:center}
+.meta .pill{background:var(--bg2);border:1px solid var(--line);padding:1px 7px;
+  border-radius:5px;font-family:var(--mono);font-size:10.5px}
+
+/* ---------- Действия инструментов ---------- */
+/* Оформление как в Claude Code: имя инструмента с цветовым кодом по роли,
+   аргументы приглушённым моноширинным. */
+.acts{margin:11px 0 0;border:1px solid var(--line);border-radius:8px;
+  background:var(--bg2);overflow:hidden}
+.acts summary{cursor:pointer;padding:7px 11px;font-size:12px;color:var(--dim);
+  display:flex;align-items:center;gap:7px;list-style:none;user-select:none;
+  font-family:var(--mono)}
+.acts summary::-webkit-details-marker{display:none}
+.acts summary:hover{color:var(--txt2);background:var(--panel2)}
+.acts summary .chev{transition:transform .15s;font-size:9px}
+.acts[open] summary .chev{transform:rotate(90deg)}
+.acts summary .cnt{margin-left:auto;font-size:10.5px;color:var(--faint);
+  background:var(--panel);padding:1px 6px;border-radius:10px}
+
+/* Строка одного вызова инструмента */
+.act{padding:4px 11px 4px 26px;font-family:var(--mono);font-size:12px;
+  color:var(--txt2);border-top:1px solid var(--line);position:relative;
+  white-space:pre-wrap;word-break:break-word;line-height:1.55}
+.act:first-child{border-top:none}
+.act .nm{font-weight:600}
+.act .ar{color:var(--faint)}
+
+/* Цвета имён инструментов по роли — как в оригинале */
+.act.r-read   .nm{color:var(--tool-read)}
+.act.r-write  .nm{color:var(--tool-write)}
+.act.r-edit   .nm{color:var(--tool-edit)}
+.act.r-bash   .nm{color:var(--tool-bash)}
+.act.r-search .nm{color:var(--tool-search)}
+.act.r-net    .nm{color:var(--tool-net)}
+.act.r-other  .nm{color:var(--txt2)}
+.act.err .nm{color:var(--err)}
+.act .el{color:var(--acc);opacity:.8}
+
+/* Живой индикатор — как «esc to interrupt» в оригинале */
+.thinking{display:flex;align-items:center;gap:9px;color:var(--dim);font-size:13px;
+  padding:3px 0}
+.thinking .spin{width:12px;height:12px;border:2px solid var(--line2);
+  border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thinking .step{font-family:var(--mono);font-size:11px;color:var(--faint);
+  margin-left:auto}
+/* Мигающий курсор в духе терминала */
+.thinking .caret{display:inline-block;width:7px;height:14px;background:var(--acc);
+  vertical-align:-2px;animation:blink 1.05s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* Diff — зелёным добавление, красным удаление */
+.diffline{font-family:var(--mono);font-size:12px;line-height:1.55;
+  white-space:pre-wrap;word-break:break-word;padding:1px 10px;border-radius:4px}
+.diff-add{background:rgba(63,122,78,.16);color:#a8d5b5;
+  box-shadow:inset 2px 0 0 var(--diff-add)}
+.diff-del{background:rgba(166,60,60,.16);color:#e0a3a3;
+  box-shadow:inset 2px 0 0 var(--diff-del)}
+.diff-h{color:var(--dim);font-weight:600;padding-top:5px;background:none}
+
+/* Markdown */
+.md>*+*{margin-top:9px}
+.md h1,.md h2,.md h3{font-weight:600;line-height:1.3;margin-top:16px;
+  letter-spacing:-.015em}
+.md h1{font-size:18px}.md h2{font-size:16px}.md h3{font-size:14px}
+.md ul,.md ol{padding-left:20px}
+.md li{margin:3px 0}
+.md code{font-family:var(--mono);font-size:12.5px;background:var(--bg2);
+  border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:#a8d0ff}
+.md pre{background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+  padding:11px 13px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;
+  line-height:1.6}
+.md pre code{background:none;border:none;padding:0;color:var(--code);font-size:12.5px}
+.md pre .copy{position:absolute;top:6px;right:8px}
+.md blockquote{border-left:2px solid var(--line2);padding-left:11px;color:var(--dim)}
+.md a{color:var(--acc)}
+.md table{border-collapse:collapse;font-size:12.5px;width:100%}
+.md th,.md td{border:1px solid var(--line);padding:5px 9px;text-align:left}
+.md th{background:var(--panel)}
+.md hr{border:none;border-top:1px solid var(--line);margin:14px 0}
+.codewrap{position:relative}
+
+/* Подсветка синтаксиса — палитра под терракотовый акцент */
+.tk-k{color:#c08a6a}   /* ключевые слова */
+.tk-s{color:#7d9a6e}   /* строки */
+.tk-n{color:#b5a08a}   /* числа */
+.tk-c{color:#5c6b52;font-style:italic} /* комментарии */
+.tk-f{color:#dcb88a}   /* функции */
+.tk-s2{color:#c98a6a}  /* строки-обёртки */
+.tk-p{color:#7aa2c4}   /* свойства/параметры */
+.tk-t{color:#9b7bc4}   /* типы */
+.tk-o{color:#c9c5bd}   /* операторы */
+.tk-v{color:#9cc4d8}   /* переменные */
+.tk-b{color:#d77757;font-weight:600} /* важное */
+
+/* ---------- Welcome: Claude Code Research Preview CLI ---------- */
+.welcome{text-align:center;padding:36px 16px 20px;color:var(--dim)}
+.claude-hero{display:flex;align-items:center;justify-content:center;gap:20px;
+  margin-bottom:24px;margin-top:4px}
+.claude-symbol-wrap{display:flex;align-items:center;justify-content:center;
+  animation:softpulse 4.5s ease-in-out infinite}
+.claude-symbol-img{width:86px;height:86px;border-radius:18px;object-fit:cover;
+  filter:drop-shadow(0 0 28px rgba(218,119,86,.85))}
+@keyframes softpulse{0%,100%{filter:drop-shadow(0 0 22px rgba(218,119,86,.65))}
+  50%{filter:drop-shadow(0 0 32px rgba(218,119,86,.85))}}
+.claude-hero-text{text-align:left}
+.claude-title{font-size:36px;font-weight:700;color:#fff;letter-spacing:-.02em;
+  line-height:1.1;margin:0}
+.claude-tag{font-family:var(--mono);font-size:12px;font-weight:700;
+  color:var(--acc);letter-spacing:2px;margin-top:6px;text-transform:uppercase}
+
+.cli-card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;
+  padding:18px 22px;max-width:640px;margin:0 auto 22px;text-align:left;
+  font-family:var(--mono);font-size:13px;line-height:1.95;
+  box-shadow:0 16px 36px rgba(0,0,0,.45)}
+.cli-line{display:flex;align-items:center;gap:9px;word-break:break-word}
+.cli-prompt{color:var(--dim);font-weight:600}
+.cli-cmd{color:var(--acc);font-weight:600}
+.cli-arg{color:var(--txt)}
+.cli-check{color:var(--ok);font-weight:bold}
+.cli-bold{color:var(--txt);font-weight:600}
+.cli-dim{color:var(--dim)}
+.cli-arrow{color:var(--acc);font-weight:bold}
+.cli-cursor{color:var(--acc);animation:blink 1.05s step-start infinite;display:inline-block;font-size:12px}
+@keyframes blink{50%{opacity:0}}
+
+.welcome .hintline{font-family:var(--mono);font-size:11.5px;color:var(--faint);
+  margin-bottom:22px}
+.welcome .hintline b{color:var(--acc);font-weight:500}
+
+.sugg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  gap:10px;max-width:640px;margin:0 auto}
+.sugg{display:flex;flex-direction:column;text-align:left;padding:12px 15px;
+  background:var(--panel);border:1px solid var(--line);border-radius:9px;
+  cursor:pointer;font-size:12.5px;color:var(--txt2);line-height:1.5;
+  transition:border-color .15s,background .15s,transform .15s}
+.sugg:hover{border-color:var(--acc-line);background:var(--panel2);
+  transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.sugg-cmd{font-family:var(--mono);font-size:12.5px;font-weight:600;
+  color:var(--txt);margin-bottom:3px}
+.sugg .k{font-family:var(--mono);font-size:10.5px;color:var(--acc);opacity:.88}
+
+/* ---------- Ввод ---------- */
+.composer{flex-shrink:0;background:var(--panel);border-top:1px solid var(--line);
+  padding:12px 24px 14px}
+.composer-inner{max-width:780px;margin:0 auto}
+.attbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px;max-height:140px;overflow-y:auto}
+.att{display:inline-flex;align-items:center;gap:8px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:9px;padding:4px 8px 4px 6px;
+  font-size:11.5px;color:var(--txt);max-width:260px;box-shadow:0 1px 3px rgba(0,0,0,.25);
+  transition:border-color .15s ease}
+.att:hover{border-color:var(--line2)}
+.att img{width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0}
+.att-icon{width:28px;height:28px;border-radius:6px;background:var(--bg2);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.att-info{display:flex;flex-direction:column;overflow:hidden;line-height:1.25}
+.att-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;font-size:11.5px;color:var(--txt)}
+.att-size{font-size:9.5px;color:var(--dim)}
+.att button{background:none;border:none;color:var(--dim);cursor:pointer;padding:2px 4px;
+  font-size:12px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+  transition:color .12s,background .12s}
+.att button:hover{color:#ef4444;background:rgba(239,68,68,.12)}
+
+.attach-btn{color:var(--dim);transition:color .15s,background .15s;padding:7px;border-radius:8px}
+.attach-btn:hover{color:var(--acc-hi);background:var(--acc-dim)}
+.attach-svg{display:block}
+
+/* Прикрепленные файлы внутри сообщений чата */
+.chat-att-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.chat-att-card{display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.25);
+  border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:5px 9px;font-size:11.5px;
+  text-decoration:none;color:var(--txt);transition:all .15s}
+.chat-att-card:hover{border-color:var(--acc);color:var(--acc-hi)}
+.chat-att-img{max-width:100%;max-height:220px;border-radius:9px;border:1px solid rgba(255,255,255,.1);
+  display:block;cursor:pointer;object-fit:cover;margin-bottom:8px;box-shadow:0 3px 12px rgba(0,0,0,.3)}
+
+.side-close-mobile{display:none}
+
+.inrow{background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+  display:flex;align-items:flex-end;gap:7px;padding:7px 7px 7px 12px;
+  transition:border-color .15s}
+.inrow:focus-within{border-color:var(--acc)}
+.inrow textarea{flex:1;background:none;border:none;padding:3px 0;resize:none;
+  max-height:190px;font-size:14px;line-height:1.6;color:var(--txt)}
+.inrow textarea:focus{outline:none}
+.hintbar{display:flex;justify-content:space-between;font-size:11px;
+  color:var(--dim);margin-top:6px;flex-wrap:wrap;gap:6px}
+.hintbar kbd{font-family:var(--mono);font-size:10px;background:var(--bg2);
+  border:1px solid var(--line);padding:0 4px;border-radius:3px}
+#mic.rec{background:var(--err);border-color:var(--err);color:#fff;
+  animation:pulse 1.1s ease-in-out infinite}
+
+/* ---------- Панель файла ---------- */
+.fpanel{width:46%;max-width:620px;flex-shrink:0;background:var(--bg2);
+  border-left:1px solid var(--line);display:flex;flex-direction:column;
+  min-height:0}
+.fpanel.hidden{display:none}
+.fp-head{padding:8px 11px;border-bottom:1px solid var(--line);display:flex;
+  align-items:center;gap:8px;flex-shrink:0}
+.fp-head .path{font-family:var(--mono);font-size:12px;color:var(--txt2);
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl}
+.fp-body{flex:1;overflow:auto;min-height:0}
+.fp-body textarea{width:100%;height:100%;min-height:300px;background:var(--bg);
+  border:none;padding:12px 14px;font-family:var(--mono);font-size:12.5px;
+  line-height:1.65;resize:none;border-radius:0;color:var(--code)}
+.fp-body textarea:focus{outline:none}
+.imgview{padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.imgview img{max-width:100%;border-radius:8px;border:1px solid var(--line);
+  background:#fff}
+.imgview .cap{font-size:11.5px;color:var(--dim);text-align:center}
+.fp-foot{padding:7px 11px;border-top:1px solid var(--line);display:flex;gap:6px;
+  flex-shrink:0;flex-wrap:wrap}
+
+/* ---------- Прочее ---------- */
+/* Кнопка установки: ненавязчиво подсвечивает себя, но не мигает */
+button.pulse{position:relative;color:var(--acc)}
+button.pulse::after{
+  content:'';position:absolute;inset:-1px;border-radius:8px;
+  border:1px solid var(--acc);opacity:.5;animation:halo 2s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes halo{0%{transform:scale(1);opacity:.5}70%{transform:scale(1.14);opacity:0}
+100%{transform:scale(1.14);opacity:0}}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;
+  align-items:center;justify-content:center;z-index:100}
+.modal.show{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:18px;width:min(400px,92vw);box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.mbox h3{margin-bottom:13px;font-size:14px;font-weight:600}
+.mbox .row{display:flex;gap:7px;margin-top:12px;justify-content:flex-end}
+
+#drop{position:fixed;inset:0;background:rgba(124,156,255,.1);
+  border:2px dashed var(--acc);display:none;align-items:center;
+  justify-content:center;font-size:15px;z-index:200;color:var(--acc)}
+#drop.on{display:flex}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--line2);border-radius:8px;
+  padding:9px 15px;font-size:12.5px;z-index:300;opacity:0;
+  transition:opacity .2s;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.toast.show{opacity:1}
+
+@media(max-width:1100px){.fpanel{width:55%}}
+/* ============================================================================
+   МОБИЛЬНАЯ ВЁРСТКА
+   Три контрольные ширины: телефон (до 700), планшет (до 1000), десктоп.
+   Ключевое: на телефоне панели становятся оверлеями с затемнением,
+   а не занимают место — иначе чату остаётся 300 px.
+   ========================================================================== */
+
+/* --- Базовые безопасные зоны (iPhone с чёлкой) --- */
+@supports (padding: max(0px)) {
+  header{padding-left:max(14px,env(safe-area-inset-left));
+         padding-right:max(14px,env(safe-area-inset-right))}
+  .composer{padding-left:max(24px,env(safe-area-inset-left));
+            padding-right:max(24px,env(safe-area-inset-right));
+            padding-bottom:max(14px,env(safe-area-inset-bottom))}
+  .chat{padding-left:env(safe-area-inset-left);
+        padding-right:env(safe-area-inset-right)}
+  .sidebar,.fpanel{padding-bottom:env(safe-area-inset-bottom)}
+}
+
+/* --- Планшет: панель файлов уже, отступы скромнее --- */
+@media(max-width:1000px){
+  .fpanel{width:52%}
+  .chat-inner,.composer-inner{padding-left:16px;padding-right:16px}
+}
+
+/* --- Телефон и планшет в портретной ориентации --- */
+@media(max-width:700px){
+  body{font-size:15px}
+  .win-controls{display:none !important}
+  .side-close-mobile{display:inline-flex}
+  header{height:50px;gap:6px;padding:0 8px}
+  header .badge{font-size:10px;padding:2px 6px}
+  .win-title{font-size:12px;gap:6px}
+  .win-title-icon{width:16px;height:16px}
+  #bSide{min-width:38px;min-height:38px;font-size:17px;display:inline-flex;align-items:center;justify-content:center}
+  /* На телефоне скрываем второстепенные бейджи: заголовок важнее */
+  #bMem,#bSto{display:none}
+  #selModel{max-width:130px;font-size:11px;padding:4px 6px}
+  #bNet{font-size:10px;padding:2px 6px}
+
+  .chat{padding:10px 0}
+  .chat-inner{padding:0 10px}
+  .welcome{padding:24px 10px}
+  .welcome h2{font-size:18px}
+  .welcome .sub{font-size:12px;margin-bottom:16px}
+  .sugg{grid-template-columns:1fr;padding:11px 12px;font-size:12px}
+
+  .msg{gap:8px;margin-bottom:14px}
+  .msg .av{width:24px;height:24px;font-size:10px}
+  .msg.u .bub{padding:8px 12px}
+  .meta{font-size:10.5px;gap:6px}
+
+  /* Панели как оверлеи с подложкой */
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:min(86vw,320px);
+    z-index:60;box-shadow:8px 0 30px rgba(0,0,0,.6);
+    padding-top:env(safe-area-inset-top);transition:margin-left .22s cubic-bezier(0.16,1,0.3,1)}
+  .sidebar.collapsed{margin-left:-105vw}
+  .fpanel{position:fixed;left:0;right:0;top:0;bottom:0;width:100%;
+    z-index:60;box-shadow:0 -8px 30px rgba(0,0,0,.6);
+    padding-top:env(safe-area-inset-top)}
+
+  /* Затемнение под открытой панелью + клик по нему закрывает */
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:55;
+    display:none;backdrop-filter:blur(2px);animation:fade .15s ease-out}
+  .scrim.on{display:block}
+
+  /* Панель файла на телефоне: заголовок + содержимое + кнопки снизу */
+  .fp-head{padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+  .fp-body{max-height:none}
+  .fp-foot{padding:9px 12px calc(9px + env(safe-area-inset-bottom));
+    background:var(--panel)}
+
+  /* Поле ввода: крупная зона нажатия, не ниже 40-44px */
+  .composer{padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
+  .composer-inner{max-width:none}
+  .inrow{padding:5px 6px 5px 8px;border-radius:12px;gap:6px}
+  .inrow textarea{font-size:16px !important;/* без этого iOS зумит при фокусе */
+    padding:6px 0;min-height:24px}
+  /* Кнопки отправки — пальцем, а не стилусом */
+  .inrow button{font-size:14px;padding:8px;min-width:40px;
+    min-height:40px;justify-content:center}
+  .attach-btn{min-width:38px;min-height:38px;padding:8px}
+  .mic-btn{min-width:38px;min-height:38px}
+  #bSend{font-size:0;padding:0;width:42px;min-width:42px;min-height:42px}
+  #bSend::after{content:'➤';font-size:16px}
+  .hintbar{font-size:10px;justify-content:center;text-align:center}
+  .hintbar kbd{display:none}
+  #hintRight{display:none}
+
+  /* Отступ под «домашнюю» полоску iOS */
+  .foot-space{height:env(safe-area-inset-bottom)}
+}
+
+/* --- Очень узкие (iPhone SE 320px) --- */
+@media(max-width:360px){
+  .welcome h2{font-size:16px}
+  .att{font-size:10.5px}
+  .act{padding-left:18px;font-size:11px}
+}
+
+/* --- Телефон в альбомной ориентации: низкая высота --- */
+@media(max-height:500px) and (orientation:landscape){
+  header{height:44px}
+  .welcome{padding:18px 12px}
+  .welcome .sub,.chips{display:none}
+  .sugg{padding:9px 11px}
+  .composer{padding-top:7px}
+  .inrow textarea{min-height:20px;font-size:15px}
+  .inrow button{min-height:38px}
+}
+
+/* --- Указатель точный (мышь): убираем крупные зоны нажатия --- */
+@media(hover:hover) and (pointer:fine){
+  .inrow button{min-width:0;min-height:0;padding:7px 12px;font-size:13px}
+  #bSend{width:auto;font-size:13px;padding:7px 14px}
+  #bSend::after{content:none}
+}
+
+/* --- Отключаем анимации для людей, которым мешает --- */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;
+    transition-duration:.01ms !important}
+  .spin{animation:none}
+}
+
+/* --- Повышенный контраст --- */
+@media(prefers-contrast:more){
+  :root{--line:#4a5464;--dim:#a8b0bd;--txt2:#d4dae3}
+  .tnode:hover{background:#2a3140}
+}
+
+/* --- Печать: убираем лишнее --- */
+@media print{
+  header,.sidebar,.composer,.fpanel,.acts{display:none !important}
+  body{background:#fff;color:#000;height:auto;overflow:visible}
+  .bub{color:#000}
+}
