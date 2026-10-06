@@ -1,0 +1,54 @@
+# ============ СЕКРЕТЫ — НИКОГДА НЕ КОММИТИТЬ ============
+.env
+.env.local
+.secrets
+credentials.*
+*.credentials
+deploy_render.py
+*.pem
+*.key
+
+# ============ ЛОГИ И ВРЕМЕННЫЕ ФАЙЛЫ ============
+*.log
+server.log
+tmp_*
+*.tmp
+
+# ============ ОТЧЁТЫ ДИАГНОСТИКИ (локальные, в репозиторий не нужны) ============
+reports/
+*.log
+
+# Локальные диагностические скрипты (живут в tests/, но запускаются вручную
+# и не нужны в сборке Render)
+tests/cyr_*.py
+tests/cache_*.py
+tests/one_shot.py
+tests/memory_*.py
+tests/render_*.py
+tests/deploy_*.py
+tests/supa_*.py
+tests/diag_bridge.py
+tests/check_leak.py
+tests/test_fc.py
+tests/test_storage.py
+tests/test_tools_protocol.py
+supa_probe.py
+
+# ============ РАБОЧАЯ ПАПКА АГЕНТА ============
+workspace/
+workspace/**
+!workspace/.gitkeep
+
+# ============ PYTHON ============
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ============ ИНСТРУМЕНТЫ ============
+.ipynb_checkpoints/
