@@ -1,0 +1,15 @@
+fastapi==0.115.6
+# Starlette ниже 0.42: в 0.42+ роутер убрал параметр on_startup,
+# на котором держится FastAPI 0.115.x. Без этого ограничения приложение
+# падает при старте с "unexpected keyword argument 'on_startup'".
+starlette>=0.41,<0.42
+uvicorn[standard]==0.34.0
+openai==1.59.6
+httpx==0.28.1
+supabase==2.15.0
+boto3==1.36.26
+python-dotenv==1.0.1
+python-multipart==0.0.20
+# Шифрование секретов в хранилище (Fernet). Без него агент не сможет
+# хранить API-ключи вне файлов проекта.
+cryptography==50.0.1
