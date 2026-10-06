@@ -1,0 +1,84 @@
+# Уборка: раз в сутки чистим рабочую папку агента на сервере Render.
+#
+# Зачем: сервер Render free имеет 512 МБ RAM и небольшой диск.
+# Агент создаёт временные файлы, и они копятся. Когда место кончится —
+# сервис падает. Этот процесс удаляет старый мусор, не трогая нужное.
+#
+# Файлы после запуска в GitHub удаляются, поэтому скрипт работает
+# по API: смотрит, что на сервере, и удаляет старые файлы оттуда.
+#
+# Запуск: вкладка Actions -> janitor -> Run workflow
+# Или автоматически каждый день в 04:17 UTC.
+
+name: janitor
+
+on:
+  schedule:
+    # 04:17 UTC каждый день.
+    # Не ровно в 00:00 - в целые часы cron-задачи в GitHub
+    # срабатывают одновременно и часто откладываются.
+    - cron: "17 4 * * *"
+  workflow_dispatch: # кнопка Run workflow для ручного запуска
+
+permissions:
+  contents: read
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Почистить рабочую папку агента
+        env:
+          # Токен Render API. Кладётся в GitHub -> Settings -> Secrets ->
+          # Actions -> New repository secret. Имя: RENDER_API_TOKEN
+          RENDER_API_TOKEN: ${{ secrets.RENDER_API_TOKEN }}
+          # Имя сервиса на Render (Render -> сервис -> название)
+          RENDER_SERVICE_NAME: ${{ vars.RENDER_SERVICE_NAME }}
+          # Токен админа агента (тот, что в .env как ADMIN_TOKEN)
+          AGENT_ADMIN_TOKEN: ${{ secrets.AGENT_ADMIN_TOKEN }}
+          # Куда стучаться. Для локальной проверки поставь свой адрес.
+          AGENT_URL: ${{ vars.AGENT_URL }}
+
+        run: |
+          set -euo pipefail
+
+          if [ -z "${AGENT_URL}" ]; then
+            echo "::error::AGENT_URL не задан (GitHub -> Settings -> Secrets -> Actions -> Variables)"
+            exit 1
+          fi
+          if [ -z "${AGENT_ADMIN_TOKEN}" ]; then
+            echo "::error::AGENT_ADMIN_TOKEN не задан"
+            exit 1
+          fi
+
+          echo "Сервер: ${AGENT_URL}"
+
+          # 1. Узнаём, жив ли сервис
+          status=$(curl -s -o /dev/null -w "%{http_code}" "${AGENT_URL}/health" || echo "000")
+          echo "Health: ${status}"
+          if [ "${status}" != "200" ]; then
+            echo "::warning::Сервис отвечает ${status}, возможно спит - уборка не критична"
+          fi
+
+          # 2. Просим сервис самого себя почистить
+          echo "Запускаю уборку на сервере..."
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${AGENT_ADMIN_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"dry_run": false}' \
+            "${AGENT_URL}/admin/cleanup" || true)
+
+          body=$(echo "${response}" | head -n -1)
+          code=$(echo "${response}" | tail -n 1)
+
+          echo "Ответ сервера (${code}):"
+          echo "${body}"
+
+          if [ "${code}" != "200" ]; then
+            echo "::error::Уборка не удалась, код ${code}"
+            exit 1
+          fi
+
+          echo "Уборка завершена"
